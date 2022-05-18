@@ -72,18 +72,26 @@ const createShortUrl= async function(req,res){
 
 //********************Get API****************************************//
 const getShortUrl = async function (req, res) {
-    try {
-        const urlData = await urlModel.findOne({ urlCode: req.params.urlCode.trim() })  //checking for document in url collection
+  try {
+      const cachedUrlData = await GET_ASYNC(`${req.params.urlCode}`)
+      
+      const parsingData = JSON.parse(cachedUrlData);
+      if(cachedUrlData) {
+          return res.status(307).redirect(parsingData) 
+        }
+      const urlData = await urlModel.findOne({ urlCode: req.params.urlCode.trim() })  //checking for document in url collection
 
-        if (!urlData)   // doc not found in url collection
-            return res.status(404).send({status: false, message: "No URL Found "});
+      if (!urlData)   // doc not found in url collection
+          return res.status(404).send({status: false, message: "No URL Found "});
 
-        return res.status(307).redirect(urlData.longUrl)    //doc found and now redirecting to original url
+      await SET_ASYNC(`${req.params.urlCode}`, JSON.stringify(urlData.longUrl));
 
-    }
-    catch (error) {
-        res.status(500).send({ status: false, error: error.message });
-    }
+      return res.status(307).redirect(urlData.longUrl)    //doc found and now redirecting to original url
+
+  }
+  catch (error) {
+      res.status(500).send({ status: false, error: error.message });
+  }
 }
 
 //*******************************************************************//
