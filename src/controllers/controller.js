@@ -48,6 +48,7 @@ const createShortUrl= async function(req,res){
         //==ckecking and sending shorturl==//
         let url = await urlModel.findOne({longUrl:longUrl}).select({_id:0,longUrl:1,shortUrl:1,urlCode:1})
         await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(url))
+
         if(url) return res.status(200).send({status: true, data : url})
 
         //==creating shorturl and url document==//
