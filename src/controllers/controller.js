@@ -23,7 +23,6 @@ redisClient.on("connect", async function () {
 //2. use the commands :
 
 //Connection setup for redis
-
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
@@ -70,23 +69,26 @@ const createShortUrl= async function(req,res){
 }
 
 
-//********************Get API****************************************//
+//***************************************************************//
+
+//---GET SHORT URL 
 const getShortUrl = async function (req, res) {
   try {
+      //==checking for url code in cache==//
       const cachedUrlData = await GET_ASYNC(`${req.params.urlCode}`)
-      
       const parsingData = JSON.parse(cachedUrlData);
       if(cachedUrlData) {
           return res.status(307).redirect(parsingData) 
         }
-      const urlData = await urlModel.findOne({ urlCode: req.params.urlCode.trim() })  //checking for document in url collection
 
+      //==checking for url code in url collection==//
+      const urlData = await urlModel.findOne({ urlCode: req.params.urlCode.trim() })  
       if (!urlData)   // doc not found in url collection
           return res.status(404).send({status: false, message: "No URL Found "});
 
+      //==url code found and now setting in cache redirecting to original url==// 
       await SET_ASYNC(`${req.params.urlCode}`, JSON.stringify(urlData.longUrl));
-
-      return res.status(307).redirect(urlData.longUrl)    //doc found and now redirecting to original url
+      return res.status(307).redirect(urlData.longUrl)    
 
   }
   catch (error) {
