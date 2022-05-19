@@ -46,19 +46,22 @@ const createShortUrl= async function(req,res){
 
         //==ckecking and sending shorturl==//
         let url = await urlModel.findOne({longUrl:longUrl}).select({_id:0,longUrl:1,shortUrl:1,urlCode:1})
-        await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(url))
-        if(url) return res.status(200).send({status: true, data : url})
+        if(url){
+          await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(url))
+          return res.status(200).send({status: true, data : url})
+        }
 
         //==creating shorturl and url document==//
-        let urlCode = shortid.generate(longUrl)
+        let urlCode = shortid.generate(longUrl).toLowerCase()
         let shortUrl = baseUrl + '/' + urlCode
         let Url = await urlModel.create({longUrl,shortUrl,urlCode})
 
-        //==destructuring to get only required keys==/
+        //==creating object to get only required keys==/
         let data ={longUrl,shortUrl,urlCode}
 
         //==setting  data in cache and sending response==//
         await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(data))
+        await SET_ASYNC(`${shortUrl}`, JSON.stringify(longUrl))
         return res.status(201).send({status: true, data : data}) 
     }catch (err) {
      return res.status(500).send({ status: false, error: err.message })
@@ -74,7 +77,7 @@ const getShortUrl = async function (req, res) {
       //==checking for url code in cache==//
       const cachedUrlData = await GET_ASYNC(`${req.params.urlCode}`)
       const parsingData = JSON.parse(cachedUrlData);
-      if(cachedUrlData) return res.status(307).redirect(parsingData) 
+      if(cachedUrlData) return res.status(302).redirect(parsingData) 
         
       //==checking for url code in url collection==//
       const urlData = await urlModel.findOne({ urlCode: req.params.urlCode.trim() })  
@@ -83,7 +86,7 @@ const getShortUrl = async function (req, res) {
 
       //==url code found and now setting in cache and redirecting to original url==// 
       await SET_ASYNC(`${req.params.urlCode}`, JSON.stringify(urlData.longUrl));
-      return res.status(307).redirect(urlData.longUrl)    
+      return res.status(302).redirect(urlData.longUrl)    
   }
   catch (error) {
       res.status(500).send({ status: false, error: error.message });
