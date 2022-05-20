@@ -1,9 +1,9 @@
 
 const validUrl = require("valid-url")
 const shortid = require("shortid")
-const urlModel = require("../models/urlModel")
 const redis = require("redis");
 const { promisify } = require("util");
+const urlModel = require("../models/urlModel")
 
 //Connect to redis
 const redisClient = redis.createClient(
@@ -41,24 +41,26 @@ const createShortUrl= async function(req,res){
         
         //==checking cache==//
         let fetchLongUrl = await GET_ASYNC(`${longUrl}`)
-        const newData = JSON.parse(fetchLongUrl)
+        const newData = JSON.parse(fetchLongUrl)//converting in JSON
         if(fetchLongUrl) return res.status(200).send({status: true, data : newData})
 
         //==ckecking and sending shorturl==//
         let url = await urlModel.findOne({longUrl:longUrl}).select({_id:0,longUrl:1,shortUrl:1,urlCode:1})
         await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(url))
+        await SET_ASYNC(`${urlCode}`, JSON.stringify(longUrl));
         if(url) return res.status(200).send({status: true, data : url})
 
         //==creating shorturl and url document==//
-        let urlCode = shortid.generate(longUrl)
+        let urlCode = shortid.generate(longUrl).toLowerCase()
         let shortUrl = baseUrl + '/' + urlCode
         let Url = await urlModel.create({longUrl,shortUrl,urlCode})
 
-        //==destructuring to get only required keys==/
+        //==creating object to get only required keys==/
         let data ={longUrl,shortUrl,urlCode}
 
         //==setting  data in cache and sending response==//
         await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(data))
+        await SET_ASYNC(`${urlCode}`, JSON.stringify(longUrl));
         return res.status(201).send({status: true, data : data}) 
     }catch (err) {
      return res.status(500).send({ status: false, error: err.message })
