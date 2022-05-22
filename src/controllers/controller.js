@@ -47,9 +47,7 @@ const createShortUrl= async function(req,res){
         //==ckecking and sending shorturl==//
         let url = await urlModel.findOne({longUrl:longUrl}).select({_id:0,longUrl:1,shortUrl:1,urlCode:1})
         await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(url))
-        await SET_ASYNC(`${urlCode}`, JSON.stringify(longUrl));
         if(url) return res.status(200).send({status: true, data : url})
-
 
         //==creating shorturl and url document==//
         let urlCode = shortid.generate(longUrl).toLowerCase()
@@ -60,9 +58,9 @@ const createShortUrl= async function(req,res){
         let data ={longUrl,shortUrl,urlCode}
 
         //==setting  data in cache and sending response==//
-        await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(data))
-        await SET_ASYNC(`${urlCode}`, JSON.stringify(longUrl));
-e
+        await SET_ASYNC(`${req.body.longUrl}`, JSON.stringify(data),"Ex",100)//setting expairy of cache storage-life for 100s.
+        await SET_ASYNC(`${urlCode}`, JSON.stringify(longUrl),"Ex",100);
+
         return res.status(201).send({status: true, data : data}) 
     }catch (err) {
      return res.status(500).send({ status: false, error: err.message })
@@ -86,7 +84,7 @@ const getShortUrl = async function (req, res) {
           return res.status(404).send({status: false, message: "No URL Found "});
 
       //==url code found and now setting in cache and redirecting to original url==// 
-      await SET_ASYNC(`${req.params.urlCode}`, JSON.stringify(urlData.longUrl));
+      await SET_ASYNC(`${req.params.urlCode}`, JSON.stringify(urlData.longUrl),"Ex",100);
       return res.status(302).redirect(urlData.longUrl)    
   }
   catch (error) {
