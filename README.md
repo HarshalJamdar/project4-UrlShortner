@@ -91,3 +91,5 @@ If you haven’t used tinyurl.com before, please try creating a new shortened UR
 }
 
 ```
+frontend url: https://react-url-shortner-ten.vercel.app/url-shortner
+backend url: https://url-shortner-backend-22v0.onrender.com
