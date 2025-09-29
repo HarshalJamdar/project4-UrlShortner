@@ -68,10 +68,9 @@ const createShortUrl= async function(req,res){
 }
 
 
-//***************************************************************//
-
 //---GET SHORT URL 
 const getShortUrl = async function (req, res) {
+  //await clearAllCache(redisClient);
   try {
       //==checking for url code in cache==//
       const cachedUrlData = await GET_ASYNC(`${req.params.urlCode}`)
@@ -92,8 +91,16 @@ const getShortUrl = async function (req, res) {
   }
 }
 
-//*******************************************************************//
+const clearAllCache = async (redisClient) => {
+  try {
+    // Flush all keys in the CURRENT database only
+    await redisClient.flushDb();
+    console.log("✅ All Redis cache cleared (current DB).");
+    return { status: true, message: "All Redis cache cleared." };
+  } catch (err) {
+    console.error("❌ Error clearing Redis cache:", err);
+    return { status: false, message: err.message };
+  }
+};
 
 module.exports={createShortUrl,getShortUrl}
-
-//*******************************************************************//
